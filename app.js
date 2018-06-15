@@ -1,12 +1,32 @@
-const request = require('request');
+const yargs = require('yargs');
 
-request({
-    url: 'http://maps.googleapis.com/maps/api/geocode/json?address=jl%20nuansa%20kori%20sading%201%20no%2019',
-    json: true,
-}, (err, res, body) => {
-    // console.log(JSON.stringify(res, undefined, 2));
-    let results = body.results[0];
-    let location = results.geometry.location;
+const geocode = require('./geocode/geocode');
+const weather = require('./weather/weather');
 
-    console.log(location);
+let argv = yargs
+    .options({
+        a: {
+            demand: true,
+            alias: 'address',
+            describe: 'Address to fetch weather for',
+            string: true,
+        }
+    })
+    .help()
+    .alias('help', 'h')
+    .argv;
+
+geocode.methods.geocodeAddress(argv.address, (errMessage, result) => {
+    if (errMessage) {
+        console.log(errMessage);
+    } else {
+        // console.log(JSON.stringify(result, undefined, 2));
+        weather.methods.fetch({
+            lat: result.lat,
+            lng: result.lng
+        }, (temp) => {
+            console.log(result.formatted_address);
+            console.log(`It's currently ${temp.temp}. It feels like ${temp.apparentTemp}.`);
+        });
+    }
 });
